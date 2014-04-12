@@ -1,0 +1,65 @@
+<launch>
+	<env name="ROSLAUNCH_SSH_UNKNOWN" value="1" />
+        <machine name="ubuntu-brake" address="ubuntu-brake" user="ubuntu" password="ubuntu" env-loader="/opt/ros/groovy/env.sh" timeout="30" default="false"/>
+        <machine name="ubuntu-steering" address="ubuntu-steering" user="ubuntu" password="ubuntu" env-loader="/opt/ros/groovy/env.sh" timeout="30" default="false"/>
+        <machine name="ATX-ATV" address="ATX-ATV" user="atv" password="atv" env-loader="/opt/ros/groovy/env.sh" default="true" timeout="30"/>
+	<node name="rosserial_python" pkg="rosserial_python" type="serial_node.py"   machine="ubuntu-brake">
+                <param name="port" value="/dev/ttyO4" />
+        </node>
+	<node name="brake" pkg="brake" type="brake"  machine="ubuntu-brake"/>
+        <node name="steering" pkg="steering" type="steering"  machine="ubuntu-steering"/>
+        <node name="sicklms" pkg="sicktoolbox_wrapper" type="sicklms">
+                <param name="port" value="/dev/ttyS0" />
+                <param name="baud" value="38400" />
+        </node>
+        <node name="tf_broadcaster" pkg="robot_setup_tf" type="tf_broadcaster"  machine="ATX-ATV"/>
+        <node name="odometry_manager" pkg="odometry_manager" type="odometry_manager"  machine="ATX-ATV"/>
+
+	<node pkg="gmapping" type="slam_gmapping" name="slam_gmapping" output="screen" machine="ATX-ATV">
+		<remap from="scan" to="scan"/>
+		<param name="odom_frame" value="odom"/>
+		<param name="map_update_interval" value="10.0"/>
+		<param name="maxUrange" value="16.0"/>
+		<param name="sigma" value="0.05"/>
+		<param name="kernelSize" value="1"/>
+		<param name="lstep" value="0.05"/>
+		<param name="astep" value="0.05"/>
+		<param name="iterations" value="5"/>
+		<param name="lsigma" value="0.075"/>
+		<param name="ogain" value="3.0"/>
+		<param name="lskip" value="0"/>
+		<param name="srr" value="0.01"/>
+		<param name="srt" value="0.02"/>
+		<param name="str" value="0.01"/>
+		<param name="stt" value="0.02"/>
+		<param name="linearUpdate" value="0.5"/>
+		<param name="angularUpdate" value="0.436"/>
+		<param name="temporalUpdate" value="-1.0"/>
+		<param name="resampleThreshold" value="0.5"/>
+		<param name="particles" value="80"/>
+		<param name="xmin" value="-30.0"/>
+		<param name="ymin" value="-30.0"/>
+		<param name="xmax" value="30.0"/>
+		<param name="ymax" value="30.0"/>
+		<param name="delta" value="0.05"/>
+		<param name="llsamplerange" value="0.01"/>
+		<param name="llsamplestep" value="0.01"/>
+		<param name="lasamplerange" value="0.005"/>
+		<param name="lasamplestep" value="0.005"/>
+	</node>
+	<param name="navfn/allow_unknown" value="true"/>
+
+	<node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen" machine="ATX-ATV">
+	    <param name="controller_frequency" value="10.0" />    
+	    <rosparam file="$(find main)/yaml/costmap_common_params.yaml" command="load" ns="global_costmap" />
+	    <rosparam file="$(find main)/yaml/costmap_common_params.yaml" command="load" ns="local_costmap" />
+	    <rosparam file="$(find main)/yaml/local_costmap_params.yaml" command="load" />
+	    <rosparam file="$(find main)/yaml/global_costmap_params.yaml" command="load" />
+	    <rosparam file="$(find main)/yaml/base_local_planner_params.yaml" command="load" />
+	  </node>
+</launch>
+
+
+
+
+
